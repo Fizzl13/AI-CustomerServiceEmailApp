@@ -1,2 +1,2 @@
 # AI-CustomerServiceEmailApp
-AI automation app foor customer service
+AI automation app for customer service
