@@ -146,11 +146,10 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
         }),
       });
       const data = await response.json();
-      const text = (data.content || [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n")
-        .trim();
+      if (!response.ok) {
+        throw new Error(data?.error || `Serverfout (${response.status}).`);
+      }
+      const text = (data?.text || "").trim();
       if (!text) throw new Error("Leeg antwoord ontvangen.");
       setDraft(text);
       setTimeout(() => setStampVisible(true), 120);
