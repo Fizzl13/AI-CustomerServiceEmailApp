@@ -60,6 +60,11 @@ app.post("/api/generate", async (req, res) => {
 
 const dist = path.join(__dirname, "dist");
 app.use(express.static(dist));
-app.get("*", (_req, res) => res.sendFile(path.join(dist, "index.html")));
+app.use((req, res, next) => {
+  if (req.method === "GET") {
+    return res.sendFile(path.join(dist, "index.html"));
+  }
+  next();
+});
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
