@@ -244,11 +244,17 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
               onChange={(e) => setTemplateId(e.target.value)}
               style={selectStyle}
             >
-              {availableTemplates.length ? availableTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.label}
+              {availableTemplates.length ? (
+                availableTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.label}
+                  </option>
+                ))
+              ) : (
+                <option value="">
+                  Geen template — AI stelt op basis van de rubriek op
                 </option>
-              )) : <option value="">Geen template beschikbaar</option>}
+              )}
             </select>
           </Field>
         </div>
