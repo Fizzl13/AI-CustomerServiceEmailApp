@@ -50,8 +50,6 @@ export default function MediahuisDesk() {
     [availableTemplates, templateId]
   );
 
-  const activeContact = useMemo(() => getContactData(publication), [publication]);
-
   const today = useMemo(
     () =>
       new Date().toLocaleDateString("nl-NL", {
@@ -73,6 +71,12 @@ export default function MediahuisDesk() {
     setDraft("");
     setCopied(false);
 
+    const contactData = getContactData(publication);
+    const contactKnowledge = Object.entries(contactData)
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+
     const systemPrompt = `Je bent een ervaren klantenservicemedewerker bij Mediahuis Nederland en schrijft namens ${publication}.
 Schrijf uitsluitend in het Nederlands, in correct en professioneel 'u'-Nederlands.
 Toon/aanpak voor dit gevalstype: ${activeCase.tone}
@@ -84,12 +88,12 @@ Gebruik onderstaande template als structureel en inhoudelijk uitgangspunt. Behou
 TEMPLATE-INHOUD:
 ${activeTemplate?.text || "Geen template beschikbaar."}
 
-CONTACTGEGEVENS VOOR ${publication}:
-${Object.entries(getContactData(publication)).filter(([, value]) => value).map(([key, value]) => `${key}: ${value}`).join("\n") || "Geen gecontroleerde contactgegevens beschikbaar."}
-Gebruik alleen bovenstaande gecontroleerde contactgegevens. Verzin nooit een telefoonnummer.
+INTERNE CONTACTKENNIS VOOR ${publication}:
+${contactKnowledge || "Geen gecontroleerde contactgegevens beschikbaar."}
+Deze contactgegevens zijn interne kennis. Zet ze NIET standaard in ieder antwoord. Bepaal op basis van de klantvraag, de geselecteerde template en de instructie of contactinformatie nodig is. Gebruik contactgegevens bijvoorbeeld wanneer de klant expliciet om een telefoonnummer, WhatsApp, e-mailadres of bereikbaarheid vraagt, of wanneer de gekozen werkwijze/template expliciet vraagt om telefonisch contact of een andere contactmogelijkheid. Bij een gewone opzegging of een andere vraag waarbij contactgegevens niet nodig zijn, laat je ze weg. Gebruik uitsluitend bovenstaande gecontroleerde gegevens en verzin nooit een telefoonnummer of e-mailadres.
 
 Instructie van de medewerker voor de richting van dit antwoord: ${instruction || "(geen aanvullende instructie, gebruik je eigen inschatting op basis van de brief, binnen het juridisch kader hierboven)"}
-Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en ondertekening "Klantenservice ${publication}". Gebruik de geselecteerde template als basis. Pas alleen aan wat nodig is voor de concrete klantvraag. Als een placeholder niet kan worden ingevuld met betrouwbare informatie, laat hem staan of formuleer neutraal; verzin niets. Voeg geen telefoonnummers toe tenzij die expliciet in de kennis of instructie staan. Blijf strikt binnen het juridisch kader hierboven. Geef alleen de e-mailtekst terug, zonder inleiding of toelichting eromheen.`;
+Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en ondertekening "Klantenservice ${publication}". Gebruik de geselecteerde template als basis. Pas alleen aan wat nodig is voor de concrete klantvraag. Als een placeholder niet kan worden ingevuld met betrouwbare informatie, laat hem staan of formuleer neutraal; verzin niets. Voeg contactgegevens alleen toe als die inhoudelijk nodig zijn. Blijf strikt binnen het juridisch kader hierboven. Geef alleen de e-mailtekst terug, zonder inleiding of toelichting eromheen.`;
 
     try {
       const response = await fetch("/api/generate", {
@@ -249,8 +253,8 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
           </Field>
         </div>
 
-        {/* Selected template summary */}
-        {(activeTemplate || activeContact) && (
+        {/* Template-info; contactgegevens blijven bewust uit beeld. */}
+        {activeTemplate && (
           <div
             style={{
               marginBottom: 22,
@@ -259,32 +263,12 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
               background: "#F5F3EC",
               fontSize: 13,
               lineHeight: 1.5,
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-              gap: 18,
             }}
           >
-            <div>
-              <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Template actief · {activeTemplate?.label || "geen"}
-              </strong>
-              <div style={{ marginTop: 4, color: "#5B5A54" }}>{activeTemplate?.description || "Geen template beschikbaar voor deze rubriek."}</div>
-            </div>
-            <div>
-              <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Contactgegevens · {publication}
-              </strong>
-              <div style={{ marginTop: 4, color: "#5B5A54" }}>
-                {activeContact.customerServicePhone || activeContact.retentionPhone ? (
-                  <>
-                    {activeContact.customerServicePhone && <div>Klantenservice: {activeContact.customerServicePhone}</div>}
-                    {activeContact.retentionPhone && <div>Aanhouding: {activeContact.retentionPhone}</div>}
-                  </>
-                ) : (
-                  "Nog geen gecontroleerde telefoonnummers ingevoerd."
-                )}
-              </div>
-            </div>
+            <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Template actief · {activeTemplate.label}
+            </strong>
+            <div style={{ marginTop: 4, color: "#5B5A54" }}>{activeTemplate.description}</div>
           </div>
         )}
 
