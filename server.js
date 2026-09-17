@@ -10,7 +10,7 @@ const port = process.env.PORT || 10000;
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "fizzl-ai-customer-service" });
+  res.json({ ok: true, service: "fizzl-ai-customer-service", version: "5.0" });
 });
 
 app.post("/api/generate", async (req, res) => {
@@ -32,7 +32,7 @@ app.post("/api/generate", async (req, res) => {
       },
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
-        max_tokens: 1000,
+        max_tokens: 1200,
         system: systemPrompt,
         messages: [{ role: "user", content: `Inkomende brief van de klant:\n\n${incoming}` }],
       }),
@@ -60,11 +60,6 @@ app.post("/api/generate", async (req, res) => {
 
 const dist = path.join(__dirname, "dist");
 app.use(express.static(dist));
-app.use((req, res, next) => {
-  if (req.method === "GET") {
-    return res.sendFile(path.join(dist, "index.html"));
-  }
-  next();
-});
+app.get("/{*splat}", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
