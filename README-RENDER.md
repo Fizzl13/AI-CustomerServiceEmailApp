@@ -1,9 +1,19 @@
-# FIZZL AI Customer Service Automation — Render deployment
+# FIZZL AI Customer Service — Render v4
+
+De Antwoordredactie is een React/Vite-app met een Express-backend. De AI-aanroep loopt server-side via `/api/generate`; de Anthropic API-key staat uitsluitend als Render environment variable.
+
+## Nieuw in v4
+- Centrale brondata in `src/customerServiceData.js`.
+- Per titel ruimte voor gecontroleerde telefoonnummer-, e-mail-, website- en openingstijdgegevens.
+- Template-selectie naast Titel en Rubriek. Templates worden automatisch gefilterd op de gekozen rubriek.
+- AI krijgt alleen ingevulde, gecontroleerde contactgegevens mee. Ontbrekende contactgegevens mogen niet worden ingevuld vanuit algemene kennis.
+- Bij het wisselen van rubriek wordt de templatekeuze gereset.
+
+## Data aanpassen
+Open `src/customerServiceData.js`. Vul de juiste gegevens in en voeg templates toe volgens de bestaande structuur. Laat onbekende gegevens leeg.
 
 ## Render
-1. Push this folder to the GitHub repository `Fizzl13/AI-CustomerServiceEmailApp`.
-2. In Render choose **New → Blueprint** if you want Render to use `render.yaml`, or create a Web Service manually.
-3. Add the secret environment variable `ANTHROPIC_API_KEY` in Render.
-4. Optional: set `ANTHROPIC_MODEL` if you want to use a different Anthropic model.
-
-The browser calls `/api/generate`; the server calls Anthropic. This keeps the API key out of the browser.
+- Build: `npm install && npm run build`
+- Start: `npm start`
+- Health check: `/api/health`
+- Environment: `ANTHROPIC_API_KEY` verplicht; `ANTHROPIC_MODEL` optioneel.

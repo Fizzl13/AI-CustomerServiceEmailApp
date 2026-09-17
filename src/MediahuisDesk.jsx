@@ -1,67 +1,8 @@
 import React, { useState, useMemo } from "react";
+import { CUSTOMER_SERVICE_DATA, getPublicationData, getCaseType, getTemplatesForCase } from "./customerServiceData";
 
-const PUBLICATIONS = [
-  "De Telegraaf",
-  "Noordhollands Dagblad",
-  "Gooi- en Eemlander",
-  "Leidsch Dagblad",
-  "Privé",
-  "Vrouw",
-  "Autovisie",
-];
-
-const CASE_TYPES = [
-  {
-    id: "retentie",
-    label: "Prijsverhoging / opzegging voorkomen",
-    tone: "Warm en oplossingsgericht. Bied begrip voor de klacht en leg de aanhoudingsactie of tegemoetkoming uit.",
-    hint: "Verwijs naar het aanhoudingsteam: 088 - 824 8242, werkdagen 08:00–17:00.",
-  },
-  {
-    id: "opzegging",
-    label: "Opzegging bevestigen / datum corrigeren",
-    tone: "Zakelijk, kort en duidelijk. Bevestig de einddatum expliciet.",
-    hint: "",
-  },
-  {
-    id: "bezorging",
-    label: "Bezorgklacht / compensatie",
-    tone: "Verontschuldigend maar niet onderdanig. Benoem concrete vervolgstap richting de bezorger of het depot.",
-    hint: "",
-  },
-  {
-    id: "incasso",
-    label: "Incasso / betalingsgeschil",
-    tone: "Zakelijk-neutraal en feitelijk. Vermijd schuldtoewijzing; verwijs waar nodig door naar het incassobureau.",
-    hint: "",
-  },
-  {
-    id: "digitaal",
-    label: "Digitale toegang (login / app)",
-    tone: "Praktisch en stapsgewijs, geen overbodige stappen die de klant al heeft geprobeerd.",
-    hint: "",
-  },
-  {
-    id: "factuur",
-    label: "Factuur / betaalvraag",
-    tone: "Feitelijk en behulpzaam.",
-    hint: "",
-  },
-  {
-    id: "account",
-    label: "Adreswijziging / accountgegevens",
-    tone: "Kort, bevestigend, geen overbodige uitleg.",
-    hint: "",
-  },
-  {
-    id: "gevoelig",
-    label: "Overlijden / bewindvoerder",
-    tone: "Zeer zorgvuldig, invoelend en rustig. Geen commerciële toon, geen haast.",
-    hint: "",
-  },
-];
-
-const NHD_NUMBER = "088 - 824 11 11";
+const PUBLICATIONS = Object.keys(CUSTOMER_SERVICE_DATA.publications);
+const CASE_TYPES = CUSTOMER_SERVICE_DATA.caseTypes;
 
 // Kernbepalingen uit de Algemene Abonnementsvoorwaarden Mediahuis Nederland
 // (per 2 februari 2026). Dit is geen volledige juridische tekst, maar een
@@ -85,6 +26,7 @@ REGELS VOOR HET CONCEPT:
 export default function MediahuisDesk() {
   const [publication, setPublication] = useState(PUBLICATIONS[0]);
   const [caseType, setCaseType] = useState(CASE_TYPES[0].id);
+  const [templateId, setTemplateId] = useState("");
   const [incoming, setIncoming] = useState("");
   const [instruction, setInstruction] = useState("");
   const [draft, setDraft] = useState("");
@@ -93,10 +35,14 @@ export default function MediahuisDesk() {
   const [copied, setCopied] = useState(false);
   const [stampVisible, setStampVisible] = useState(false);
 
-  const activeCase = useMemo(
-    () => CASE_TYPES.find((c) => c.id === caseType),
-    [caseType]
+  const activeCase = useMemo(() => getCaseType(caseType), [caseType]);
+  const availableTemplates = useMemo(() => getTemplatesForCase(caseType), [caseType]);
+  const activeTemplate = useMemo(
+    () => availableTemplates.find((template) => template.id === templateId),
+    [availableTemplates, templateId]
   );
+  const publicationData = useMemo(() => getPublicationData(publication), [publication]);
+
 
   const today = useMemo(
     () =>
@@ -119,17 +65,27 @@ export default function MediahuisDesk() {
     setDraft("");
     setCopied(false);
 
-    const numberContext =
-      caseType === "retentie"
-        ? "Vermeld indien passend het aanhoudingsteam: 088 - 824 8242, werkdagen 08:00–17:00."
-        : publication === "Noordhollands Dagblad" && caseType === "digitaal"
-        ? `Vermeld indien passend de klantenservice van Noordhollands Dagblad: ${NHD_NUMBER}, werkdagen 08:00–17:00.`
-        : "";
+    const contactEntries = Object.entries(publicationData.contact || {}).filter(([, value]) => String(value || "").trim());
+    const contactContext = contactEntries.length
+      ? contactEntries.map(([key, value]) => `${key}: ${value}`).join("\n")
+      : "Geen gecontroleerde contactgegevens beschikbaar voor deze titel.";
+
+    const templateContext = activeTemplate
+      ? `Geselecteerde template: ${activeTemplate.label}\nTemplate-instructie: ${activeTemplate.text}`
+      : "Geen specifieke template geselecteerd. Gebruik de rubriek en medewerkerinstructie.";
 
     const systemPrompt = `Je bent een ervaren klantenservicemedewerker bij Mediahuis Nederland en schrijft namens ${publication}.
 Schrijf uitsluitend in het Nederlands, in correct en professioneel 'u'-Nederlands.
 Toon/aanpak voor dit gevalstype: ${activeCase.tone}
-${numberContext}
+GEVERIFIEERDE CONTACTGEGEVENS VOOR DEZE TITEL:
+${contactContext}
+
+${templateContext}
+
+DATAREGELS:
+- Gebruik uitsluitend contactgegevens die hierboven expliciet als gecontroleerd brongegeven zijn meegegeven.
+- Als een telefoonnummer, e-mailadres, website of openingstijd ontbreekt, verzin of raad het nooit. Laat het weg of vraag de medewerker om het juiste gegeven toe te voegen.
+- Gebruik geen contactgegevens uit je algemene kennis.
 
 ${LEGAL_FRAMEWORK}
 
@@ -241,7 +197,7 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             gap: 20,
             marginBottom: 22,
           }}
@@ -262,7 +218,7 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
           <Field label="Rubriek (type zaak)">
             <select
               value={caseType}
-              onChange={(e) => setCaseType(e.target.value)}
+              onChange={(e) => { setCaseType(e.target.value); setTemplateId(""); }}
               style={selectStyle}
             >
               {CASE_TYPES.map((c) => (
@@ -272,6 +228,33 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
               ))}
             </select>
           </Field>
+          <Field label="Template (optioneel)">
+            <select
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="">Geen template — AI bepaalt de opbouw</option>
+              {availableTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11.5,
+              color: "#5B5A54",
+              marginTop: -8,
+            }}
+          >
+            Contactgegevens: {Object.values(publicationData.contact || {}).some((value) => String(value || "").trim())
+              ? "gecontroleerde gegevens beschikbaar voor deze titel"
+              : "nog niet ingevuld — AI mag geen telefoonnummer of e-mailadres verzinnen"}
+          </div>
         </div>
 
         {/* Two-column spread */}
