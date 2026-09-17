@@ -10,7 +10,7 @@ const port = process.env.PORT || 10000;
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "fizzl-ai-customer-service", version: "5.0" });
+  res.json({ ok: true, service: "fizzl-ai-customer-service", version: "6.0" });
 });
 
 app.post("/api/generate", async (req, res) => {

@@ -1,66 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { TEMPLATES } from "./knowledge/templates.js";
-
-const PUBLICATIONS = [
-  "De Telegraaf",
-  "Noordhollands Dagblad",
-  "Gooi- en Eemlander",
-  "Leidsch Dagblad",
-  "Privé",
-  "Vrouw",
-  "Autovisie",
-];
-
-const CASE_TYPES = [
-  {
-    id: "retentie",
-    label: "Prijsverhoging / opzegging voorkomen",
-    tone: "Warm en oplossingsgericht. Bied begrip voor de klacht en leg de aanhoudingsactie of tegemoetkoming uit.",
-    hint: "Verwijs naar het aanhoudingsteam: 088 - 824 8242, werkdagen 08:00–17:00.",
-  },
-  {
-    id: "opzegging",
-    label: "Opzegging bevestigen / datum corrigeren",
-    tone: "Zakelijk, kort en duidelijk. Bevestig de einddatum expliciet.",
-    hint: "",
-  },
-  {
-    id: "bezorging",
-    label: "Bezorgklacht / compensatie",
-    tone: "Verontschuldigend maar niet onderdanig. Benoem concrete vervolgstap richting de bezorger of het depot.",
-    hint: "",
-  },
-  {
-    id: "incasso",
-    label: "Incasso / betalingsgeschil",
-    tone: "Zakelijk-neutraal en feitelijk. Vermijd schuldtoewijzing; verwijs waar nodig door naar het incassobureau.",
-    hint: "",
-  },
-  {
-    id: "digitaal",
-    label: "Digitale toegang (login / app)",
-    tone: "Praktisch en stapsgewijs, geen overbodige stappen die de klant al heeft geprobeerd.",
-    hint: "",
-  },
-  {
-    id: "factuur",
-    label: "Factuur / betaalvraag",
-    tone: "Feitelijk en behulpzaam.",
-    hint: "",
-  },
-  {
-    id: "account",
-    label: "Adreswijziging / accountgegevens",
-    tone: "Kort, bevestigend, geen overbodige uitleg.",
-    hint: "",
-  },
-  {
-    id: "gevoelig",
-    label: "Overlijden / bewindvoerder",
-    tone: "Zeer zorgvuldig, invoelend en rustig. Geen commerciële toon, geen haast.",
-    hint: "",
-  },
-];
+import { getContactData } from "./knowledge/contactData.js";
+import { PUBLICATIONS, CASE_TYPES } from "./customerServiceData.js";
 
 
 // Kernbepalingen uit de Algemene Abonnementsvoorwaarden Mediahuis Nederland
@@ -109,6 +50,8 @@ export default function MediahuisDesk() {
     [availableTemplates, templateId]
   );
 
+  const activeContact = useMemo(() => getContactData(publication), [publication]);
+
   const today = useMemo(
     () =>
       new Date().toLocaleDateString("nl-NL", {
@@ -140,6 +83,10 @@ Gebruik onderstaande template als structureel en inhoudelijk uitgangspunt. Behou
 
 TEMPLATE-INHOUD:
 ${activeTemplate?.text || "Geen template beschikbaar."}
+
+CONTACTGEGEVENS VOOR ${publication}:
+${Object.entries(getContactData(publication)).filter(([, value]) => value).map(([key, value]) => `${key}: ${value}`).join("\n") || "Geen gecontroleerde contactgegevens beschikbaar."}
+Gebruik alleen bovenstaande gecontroleerde contactgegevens. Verzin nooit een telefoonnummer.
 
 Instructie van de medewerker voor de richting van dit antwoord: ${instruction || "(geen aanvullende instructie, gebruik je eigen inschatting op basis van de brief, binnen het juridisch kader hierboven)"}
 Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en ondertekening "Klantenservice ${publication}". Gebruik de geselecteerde template als basis. Pas alleen aan wat nodig is voor de concrete klantvraag. Als een placeholder niet kan worden ingevuld met betrouwbare informatie, laat hem staan of formuleer neutraal; verzin niets. Voeg geen telefoonnummers toe tenzij die expliciet in de kennis of instructie staan. Blijf strikt binnen het juridisch kader hierboven. Geef alleen de e-mailtekst terug, zonder inleiding of toelichting eromheen.`;
@@ -303,7 +250,7 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
         </div>
 
         {/* Selected template summary */}
-        {activeTemplate && (
+        {(activeTemplate || activeContact) && (
           <div
             style={{
               marginBottom: 22,
@@ -312,12 +259,32 @@ Schrijf een volledige, verzendklare e-mail: aanhef, body, passende afsluiting en
               background: "#F5F3EC",
               fontSize: 13,
               lineHeight: 1.5,
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+              gap: 18,
             }}
           >
-            <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Template actief · {activeTemplate.label}
-            </strong>
-            <div style={{ marginTop: 4, color: "#5B5A54" }}>{activeTemplate.description}</div>
+            <div>
+              <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Template actief · {activeTemplate?.label || "geen"}
+              </strong>
+              <div style={{ marginTop: 4, color: "#5B5A54" }}>{activeTemplate?.description || "Geen template beschikbaar voor deze rubriek."}</div>
+            </div>
+            <div>
+              <strong style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Contactgegevens · {publication}
+              </strong>
+              <div style={{ marginTop: 4, color: "#5B5A54" }}>
+                {activeContact.customerServicePhone || activeContact.retentionPhone ? (
+                  <>
+                    {activeContact.customerServicePhone && <div>Klantenservice: {activeContact.customerServicePhone}</div>}
+                    {activeContact.retentionPhone && <div>Aanhouding: {activeContact.retentionPhone}</div>}
+                  </>
+                ) : (
+                  "Nog geen gecontroleerde telefoonnummers ingevoerd."
+                )}
+              </div>
+            </div>
           </div>
         )}
 

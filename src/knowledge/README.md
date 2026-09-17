@@ -1,12 +1,14 @@
 # FIZZL Customer Service knowledge
 
-## Templates
-De eerste dataset bevat de drie templates uit de aangeleverde `templates.txt`-screenshots:
-- Aankondiging beëindiging
-- Overlijden
-- Definitieve beëindiging
+Deze map bevat de kennis die de AI gebruikt bij het opstellen van klantantwoorden.
 
-## Belangrijk
-Telefoonnummers zijn in deze versie bewust niet hardcoded. Eerdere nummers bleken niet betrouwbaar. Nieuwe nummers kunnen later per titel worden toegevoegd in een aparte `contactData.js`.
+## Bestanden
 
-De placeholders in de aangeleverde templates zijn behouden.
+- `templates.js` — templates die via de Template-selectie in de applicatie gekozen kunnen worden.
+- `contactData.js` — gecontroleerde telefoonnummers en andere contactgegevens per titel.
+
+## Telefoonnummers toevoegen
+
+Voeg alleen een telefoonnummer toe nadat het gecontroleerd is. Laat een waarde leeg als het nummer nog niet zeker is.
+
+De applicatie stuurt lege/onbekende telefoonnummers niet naar de AI als beschikbare contactinformatie. De AI mag zelf geen telefoonnummers verzinnen.
